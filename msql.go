@@ -20,8 +20,8 @@ type Msql struct {
 	Db       *sql.DB
 }
 
-//Init 初始化连接
-func Init(user, passwd, host, port, database, charset string) Msql {
+//NewMsql 初始化连接
+func NewMsql(user, passwd, host, port, database, charset string) Msql {
 	dbDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s", user, passwd, host, port, database, charset)
 	//打开连接失败
 	db, err := sql.Open("mysql", dbDSN)
