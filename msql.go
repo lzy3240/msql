@@ -63,13 +63,10 @@ func (m *Msql) Queryby(db *sql.DB, sqlstr string, args ...interface{}) *[]map[st
 
 	// `SELECT * FROM user WHERE mobile=?`
 	stmt, err := db.Prepare(sqlstr)
-	if err != nil {
-		fmt.Println(err)
-	}
+	checkErr(err)
+	defer stmt.Close()
 	rows, err := stmt.Query(args...)
-	if err != nil {
-		fmt.Println(err)
-	}
+	checkErr(err)
 	//遍历每一行
 	colNames, _ := rows.Columns()
 	var cols = make([]interface{}, len(colNames))
@@ -79,9 +76,7 @@ func (m *Msql) Queryby(db *sql.DB, sqlstr string, args ...interface{}) *[]map[st
 	var maps = make([]map[string]interface{}, 0)
 	for rows.Next() {
 		err := rows.Scan(cols...)
-		if err != nil {
-			fmt.Printf("err:%v\n", err)
-		}
+		checkErr(err)
 		var rowMap = make(map[string]interface{})
 		for i := 0; i < len(colNames); i++ {
 			rowMap[colNames[i]] = convertRow(*(cols[i].(*interface{})))
@@ -97,6 +92,14 @@ func convertRow(row interface{}) interface{} {
 	switch row.(type) {
 	case int:
 		return gocast.ToInt(row)
+	case int32:
+		return gocast.ToFloat32(row)
+	case int64:
+		return gocast.ToFloat64(row)
+	case float32:
+		return gocast.ToFloat32(row)
+	case float64:
+		return gocast.ToFloat64(row)
 	case string:
 		return gocast.ToString(row)
 	case []byte:
@@ -113,18 +116,19 @@ func (m *Msql) Modifyby(db *sql.DB, sqlstr string, args ...interface{}) int64 {
 	// "update user set mobile=? where id=?"
 	// "DELETE FROM user where id=?"
 	stmt, err := db.Prepare(sqlstr) // Exec、Prepare均可实现增删改查
-	if err != nil {
-		fmt.Printf("err:%v\n", err)
-	}
+	checkErr(err)
 	defer stmt.Close()
 	res, err := stmt.Exec(args...)
-	if err != nil {
-		fmt.Printf("err:%v\n", err)
-	}
+	checkErr(err)
 	//判断执行结果
 	num, err := res.RowsAffected()
-	if err != nil {
-		fmt.Printf("err:%v\n", err)
-	}
+	checkErr(err)
 	return num
+}
+
+//checkErr 检查错误
+func checkErr(err error) {
+	if err != nil {
+		fmt.Println(err) //panic(err)
+	}
 }
